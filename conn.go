@@ -26,69 +26,80 @@ import (
 var interrupt = make(chan bool, 1)
 var messages = make(chan map[string]string)
 
+type connection struct {
+	ws *websocket.Conn
+}
+
+var conn *connection
+
 func connect(g *gocui.Gui) error {
-	go func() {
-		fmt.Fprintf(status, "Connecting to %s\n", *address)
+	fmt.Fprintf(status, "Connecting to %s\n", *address)
 
-		u := url.URL{Scheme: "ws", Host: *address, Path: "/socket"}
+	u := url.URL{Scheme: "ws", Host: *address, Path: "/socket"}
 
-		c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		fmt.Fprintf(status, "Failed to connect: %v\n", err)
+	}
+	defer c.Close()
+
+	conn = &connection{ws: c}
+	return nil
+}
+
+func (c *connection) Close() {
+	c.write(websocket.CloseMessage, []byte{})
+	c.ws.Close()
+}
+
+func (c *connection) write(mt int, payload []byte) error {
+	c.ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	return c.ws.WriteMessage(mt, payload)
+}
+
+func (c *connection) writeJSON(payload interface{}) error {
+	c.ws.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	return c.ws.WriteJSON(payload)
+}
+
+func (c *connection) readLoop() {
+	defer c.Close()
+	for {
+		_, data, err := c.ws.ReadMessage()
 		if err != nil {
-			fmt.Fprintf(status, "Failed to connect: %v\n", err)
+			fmt.Fprintf(status, "Disconnected: %v\n", err)
+			return
 		}
-		defer c.Close()
+		fmt.Fprintf(output, "Received %s\n", string(data))
+	}
+}
 
-		done := make(chan struct{})
-
-		go func() {
-			defer c.Close()
-			defer close(done)
-			for {
-				var data []byte
-				_, data, err = c.ReadMessage()
-				if err != nil {
-					fmt.Fprintf(status, "Disconnected: %v\n", err)
-					return
-				}
-				fmt.Fprintf(output, "Received %s\n", string(data))
-			}
-		}()
-
-		ticker := time.NewTicker(time.Second)
-		defer ticker.Stop()
-		for {
-			select {
-			case new, ok := <-messages:
-				if !ok {
-					err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-					if err != nil {
-						return
-					}
-					c.Close()
-					return
-				}
-				fmt.Fprintf(output, "Sending message %v...", new)
-				err = c.WriteJSON(new)
-				if err != nil {
-					fmt.Fprintf(status, "Disconnected: %v\n", err)
-					return
-				}
-				fmt.Fprint(output, " done!\n")
-			case <-ticker.C:
-				err = c.WriteMessage(websocket.PingMessage, []byte{})
-				if err != nil {
-					fmt.Fprintf(status, "Disconnected: %v\n", err)
-					return
-				}
-			case <-interrupt:
-				err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-				if err != nil {
-					return
-				}
+func (c *connection) writeLoop() {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case new, ok := <-messages:
+			if !ok {
 				c.Close()
 				return
 			}
+			fmt.Fprintf(output, "Sending message %v...", new)
+			err := c.writeJSON(new)
+			if err != nil {
+				fmt.Fprintf(status, "Disconnected: %v\n", err)
+				return
+			}
+			fmt.Fprint(output, " done!\n")
+		case <-ticker.C:
+			err := c.write(websocket.PingMessage, []byte{})
+			if err != nil {
+				fmt.Fprintf(status, "Disconnected: %v\n", err)
+				return
+			}
+		case <-interrupt:
+			c.Close()
+			return
 		}
-	}()
-	return nil
+	}
 }

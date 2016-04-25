@@ -26,6 +26,7 @@ import (
 
 var address = flag.String("address", "localhost:29305", "The address of the shitler server.")
 var name = flag.String("name", "CLI-Guest", "The name to join with.")
+var authtoken = flag.String("authtoken", "", "Auth token to retake username.")
 
 var status, output, players, input, errView *gocui.View
 
@@ -58,9 +59,10 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	nilrror = nil
 	var msg = make(map[string]string)
 
-	args := strings.Split(v.ViewBuffer(), " ")
+	args := strings.Split(strings.TrimSpace(v.ViewBuffer()), " ")
 	command := strings.ToLower(args[0])
 	args = args[1:]
+	fmt.Fprintln(output, command, args)
 
 	msg["type"] = command
 	switch command {
@@ -93,6 +95,7 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	case "join":
 		msg["game"] = args[0]
 		msg["name"] = *name
+		msg["authtoken"] = *authtoken
 	default:
 		fmt.Fprintf(output, "Unknown command: %s\n", command)
 		return
