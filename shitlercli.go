@@ -17,14 +17,15 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/jroimartin/gocui"
+	"strings"
 	"unicode/utf8"
 )
 
 var address = flag.String("address", "localhost:29305", "The address of the shitler server.")
+var name = flag.String("name", "CLI-Guest", "The name to join with.")
 
 var status, output, players, input, errView *gocui.View
 
@@ -53,55 +54,53 @@ func main() {
 	}
 }
 
-func layout(g *gocui.Gui) (err error) {
-	maxX, maxY := g.Size()
-	if maxX < 70 || maxY < 15 {
-		errView, err = g.SetView("error", 0, 0, maxX-1, maxY-1)
-		if err != nil && err != gocui.ErrUnknownView {
-			return
-		}
-		errView.Wrap = true
-		errView.Clear()
-		fmt.Fprintf(errView, "Window too small!")
-		return nil
-	}
-
-	if errView != nil {
-		g.DeleteView(errView.Name())
-		errView = nil
-	}
-
-	status, err = g.SetView("status", 0, 0, maxX-1, 2)
-	if err != nil && err != gocui.ErrUnknownView {
-		return err
-	}
-
-	output, err = g.SetView("output", 0, 3, maxX-29, maxY-4)
-	if err != nil && err != gocui.ErrUnknownView {
-		return
-	}
-
-	players, err = g.SetView("players", maxX-28, 3, maxX-1, maxY-4)
-	if err != nil && err != gocui.ErrUnknownView {
-		return
-	}
-
-	input, err = g.SetView("input", 0, maxY-3, maxX-1, maxY-1)
-	if err != nil && err != gocui.ErrUnknownView {
-		return
-	}
-	g.SetCurrentView("input")
-
-	return nil
-}
-
-func onInput(g *gocui.Gui, v *gocui.View) error {
+func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
+	nilrror = nil
 	var msg = make(map[string]string)
-	dec := json.NewDecoder(v)
-	dec.Decode(&msg)
+
+	args := strings.Split(v.ViewBuffer(), " ")
+	command := strings.ToLower(args[0])
+	args = args[1:]
+
+	msg["type"] = command
+	switch command {
+	case "chancellor":
+		msg["type"] = "pickchancellor"
+		msg["name"] = args[0]
+	case "vote":
+		switch strings.ToLower(args[0]) {
+		case "ja", "yes", "1", "true":
+			msg["vote"] = "ja"
+		case "nein", "no", "0", "false":
+			msg["vote"] = "nein"
+		}
+	case "start":
+		break
+	case "discard":
+		msg["index"] = args[0]
+	case "veto":
+		switch strings.ToLower(args[0]) {
+		case "request", "ask":
+			msg["type"] = "vetorequest"
+		case "accept", "yes":
+			msg["type"] = "vetoaccept"
+		}
+	case "president":
+		msg["type"] = "presidentselect"
+		fallthrough
+	case "investigate", "execute":
+		msg["name"] = args[0]
+	case "join":
+		msg["game"] = args[0]
+		msg["name"] = *name
+	default:
+		fmt.Fprintf(output, "Unknown command: %s\n", command)
+		return
+	}
+
 	messages <- msg
 	v.Clear()
-	return nil
+	return
 }
 
 func load(g *gocui.Gui) error {
