@@ -16,20 +16,16 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
 	"github.com/jroimartin/gocui"
 	flag "github.com/ogier/pflag"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
 var address = flag.StringP("address", "a", "localhost:29305", "The address of the shitler server.")
 var secure = flag.BoolP("secure", "s", false, "Use secure connections (https/wss)")
 var name = flag.StringP("name", "n", "CLI-Guest", "The name to join with.")
 var authtoken = flag.StringP("authtoken", "t", "", "Auth token to retake username.")
+var g *gocui.Gui
+var playerList map[string]string
 var protocolHTTP = "http"
 var protocolWS = "ws"
 
@@ -43,7 +39,7 @@ func main() {
 		protocolWS += "s"
 	}
 
-	g := gocui.NewGui()
+	g = gocui.NewGui()
 	if err := g.Init(); err != nil {
 		panic(err)
 	}
@@ -65,79 +61,6 @@ func main() {
 	}
 }
 
-func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
-	nilrror = nil
-	var msg = make(map[string]string)
-	data := strings.TrimSpace(v.Buffer())
-
-	if !strings.HasPrefix(data, "/") {
-		msg["type"] = "chat"
-		msg["message"] = data
-		v.Clear()
-		conn.ch <- msg
-		return
-	}
-
-	args := strings.Split(data, " ")
-	command := strings.ToLower(args[0])[1:]
-	args = args[1:]
-	v.Clear()
-
-	msg["type"] = command
-	switch command {
-	case "create":
-		u := url.URL{Scheme: protocolHTTP, Host: *address, Path: "/create"}
-		resp, err := http.DefaultClient.Get(u.String())
-		if err != nil {
-			fmt.Fprintln(output, "Failed to create game:", err)
-			return
-		}
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Fprintln(output, "Failed to create game:", err)
-			return
-		}
-		fmt.Fprintln(output, "Created game", string(data))
-		return
-	case "chancellor":
-		msg["type"] = "pickchancellor"
-		msg["name"] = args[0]
-	case "vote":
-		switch strings.ToLower(args[0]) {
-		case "ja", "yes", "1", "true":
-			msg["vote"] = "ja"
-		case "nein", "no", "0", "false":
-			msg["vote"] = "nein"
-		}
-	case "start":
-		break
-	case "discard":
-		msg["index"] = args[0]
-	case "veto":
-		switch strings.ToLower(args[0]) {
-		case "request", "ask":
-			msg["type"] = "vetorequest"
-		case "accept", "yes":
-			msg["type"] = "vetoaccept"
-		}
-	case "president":
-		msg["type"] = "presidentselect"
-		fallthrough
-	case "investigate", "execute":
-		msg["name"] = args[0]
-	case "join":
-		msg["game"] = args[0]
-		msg["name"] = *name
-		msg["authtoken"] = *authtoken
-	default:
-		fmt.Fprintf(output, "Unknown command: %s\n", command)
-		return
-	}
-
-	conn.ch <- msg
-	return
-}
-
 func load(g *gocui.Gui) error {
 	status.Title = "Status"
 	players.Title = "Players"
@@ -145,26 +68,4 @@ func load(g *gocui.Gui) error {
 	input.Title = "Input"
 	input.Editable = true
 	return nil
-}
-
-func normalizePlayers(players map[string]string) string {
-	var maxLen int
-	for player := range players {
-		if len(player) > maxLen {
-			maxLen = len(player)
-		}
-	}
-	var buf bytes.Buffer
-	for player, role := range players {
-		buf.WriteString(player)
-		if len(player) < maxLen {
-			for i := len(player); i < maxLen; i++ {
-				buf.WriteString(" ")
-			}
-		}
-		buf.WriteString(" - ")
-		buf.WriteString(role)
-		buf.WriteRune('\n')
-	}
-	return buf.String()
 }

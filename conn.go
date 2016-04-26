@@ -27,11 +27,9 @@ import (
 var interrupt = make(chan bool, 1)
 
 type connection struct {
-	ws      *websocket.Conn
-	g       *gocui.Gui
-	ch      chan interface{}
-	joined  bool
-	players map[string]string
+	ws     *websocket.Conn
+	ch     chan interface{}
+	joined bool
 }
 
 var conn *connection
@@ -46,7 +44,7 @@ func connect(g *gocui.Gui) error {
 		fmt.Fprintf(status, "Failed to connect: %v\n", err)
 	}
 
-	conn = &connection{ws: c, g: g, ch: make(chan interface{}), joined: false}
+	conn = &connection{ws: c, ch: make(chan interface{}), joined: false}
 	go conn.writeLoop()
 	go conn.readLoop()
 	return nil
@@ -77,78 +75,17 @@ func (c *connection) readLoop() {
 		var rec = make(map[string]interface{})
 		err = json.Unmarshal(data, &rec)
 		if err != nil {
-			printOutput(c.g, err)
+			printOutput(g, err)
 		}
 		if !c.joined {
-			success, ok := rec["success"].(bool)
-			if !ok {
-				printOutput(c.g, "Invalid map", rec)
-			} else if success {
-				*authtoken = rec["authtoken"].(string)
-				c.joined = true
-				status.Clear()
-				fmt.Fprintln(status, "In game", rec["game"])
-				printOutput(c.g, "Successfully joined", rec["game"])
-			} else {
-				msg, ok := rec["message"].(string)
-				if !ok {
-					printOutput(c.g, "Invalid map", rec)
-					continue
-				}
-				switch msg {
-				case "gamenotfound":
-					printOutput(c.g, "Could not find the given game!")
-				case "gamestarted":
-					printOutput(c.g, "That game has already started (try giving your authtoken?)")
-				case "full":
-					printOutput(c.g, "That game is full (try giving your authtoken?)")
-				case "nameused":
-					printOutput(c.g, "The name", *name, "is already in use (try giving your authtoken?)")
-				case "invalidname":
-					printOutput(c.g, "Your name contains invalid characters or is too short or long")
-				default:
-					printOutput(c.g, "Unknown error:", rec["message"].(string))
-				}
-			}
+			c.joined = receivePreJoin(rec)
 			continue
 		}
 		typ, ok := rec["type"].(string)
 		if !ok {
-			printOutput(c.g, "Invalid message from server:", rec)
+			printOutput(g, "Invalid message from server:", rec)
 		}
-		switch typ {
-		case "chat":
-			printOutputf(c.g, "<%s> %s\n", rec["sender"], rec["message"])
-		case "join":
-			printOutput(c.g, rec["name"], "joined the game.")
-		case "quit":
-			printOutput(c.g, rec["name"], "left the game.")
-		case "connected":
-			printOutput(c.g, rec["name"], "reconnected.")
-		case "disconnected":
-			printOutput(c.g, rec["name"], "disconnected.")
-		case "start":
-			role, _ := rec["role"].(string)
-			if role == "hitler" {
-				printOutput(c.g, "The game has started. You're Hitler!")
-			} else {
-				printOutput(c.g, "The game has started. You're a", role)
-			}
-
-			ps, ok := rec["players"].(map[string]interface{})
-			c.players = make(map[string]string)
-			for name, role := range ps {
-				r, _ := role.(string)
-				c.players[name] = r
-			}
-			if ok {
-				setPlayerList(c.g, normalizePlayers(c.players))
-			} else {
-				setPlayerList(c.g, "Failed to load players")
-			}
-		default:
-			printOutput(c.g, "Unidentified message from server:", rec)
-		}
+		receive(typ, rec)
 	}
 }
 
@@ -164,13 +101,13 @@ func (c *connection) writeLoop() {
 			}
 			err := c.writeJSON(new)
 			if err != nil {
-				setStatus(c.g, "Disconnected:", err)
+				setStatus(g, "Disconnected:", err)
 				return
 			}
 		case <-ticker.C:
 			err := c.write(websocket.PingMessage, []byte{})
 			if err != nil {
-				setStatus(c.g, "Disconnected:", err)
+				setStatus(g, "Disconnected:", err)
 				return
 			}
 		case <-interrupt:
