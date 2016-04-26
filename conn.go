@@ -74,25 +74,36 @@ func (c *connection) readLoop() {
 			return
 		}
 		var rec = make(map[string]interface{})
-		json.Unmarshal(data, &rec)
-
+		err = json.Unmarshal(data, &rec)
+		if err != nil {
+			fmt.Fprintln(output, err)
+		}
 		if !c.joined {
-			if s, ok := rec["success"].(bool); ok && s {
+			success, ok := rec["success"].(bool)
+			if !ok {
+				fmt.Fprintln(output, "Invalid map", rec)
+			} else if success {
 				*authtoken = rec["authtoken"].(string)
+				c.joined = true
 			} else {
-				switch rec["message"].(string) {
+				msg, ok := rec["message"].(string)
+				if !ok {
+					fmt.Fprintln(output, "Invalid map", rec)
+					continue
+				}
+				switch msg {
 				case "gamenotfound":
-					fmt.Fprintln(status, "Could not find the given game!")
+					fmt.Fprintln(output, "Could not find the given game!")
 				case "gamestarted":
-					fmt.Fprintln(status, "That game has already started (try giving your authtoken?)")
+					fmt.Fprintln(output, "That game has already started (try giving your authtoken?)")
 				case "full":
-					fmt.Fprintln(status, "That game is full (try giving your authtoken?)")
+					fmt.Fprintln(output, "That game is full (try giving your authtoken?)")
 				case "nameused":
-					fmt.Fprintln(status, "The name", *name, "is already in use (try giving your authtoken?)")
+					fmt.Fprintln(output, "The name", *name, "is already in use (try giving your authtoken?)")
 				case "invalidname":
-					fmt.Fprintln(status, "Your name contains invalid characters or is too short or long")
+					fmt.Fprintln(output, "Your name contains invalid characters or is too short or long")
 				default:
-					fmt.Fprintln(status, "Unknown error:", rec["message"].(string))
+					fmt.Fprintln(output, "Unknown error:", rec["message"].(string))
 				}
 			}
 			continue
