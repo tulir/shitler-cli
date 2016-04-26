@@ -77,15 +77,22 @@ func receive(typ string, data map[string]interface{}) {
 
 		ps, ok := data["players"].(map[string]interface{})
 		playerList = make(map[string]string)
-		for name, role := range ps {
-			r, _ := role.(string)
-			playerList[name] = r
+		for n, r := range ps {
+			rs, _ := r.(string)
+			if n == *name {
+				rs = role
+			}
+			playerList[n] = rs
 		}
 		if ok {
 			setPlayerList(g, normalizePlayers(playerList))
 		} else {
 			setPlayerList(g, "Failed to load players")
 		}
+	case "president":
+		name, _ := data["name"].(string)
+		printOutput(g, "The president is", name)
+		setStatus(g, name, " is choosing a chancellor.")
 	default:
 		printOutput(g, "Unidentified message from server:", data)
 	}
