@@ -85,6 +85,8 @@ func (c *connection) readLoop() {
 			} else if success {
 				*authtoken = rec["authtoken"].(string)
 				c.joined = true
+				status.Clear()
+				fmt.Fprintln(status, "In game")
 			} else {
 				msg, ok := rec["message"].(string)
 				if !ok {
@@ -108,7 +110,6 @@ func (c *connection) readLoop() {
 			}
 			continue
 		}
-
 		fmt.Fprintf(output, "Received %s\n", string(data))
 	}
 }
