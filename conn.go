@@ -16,6 +16,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/jroimartin/gocui"
@@ -24,10 +25,12 @@ import (
 )
 
 var interrupt = make(chan bool, 1)
-var messages = make(chan map[string]string)
 
 type connection struct {
-	ws *websocket.Conn
+	ws     *websocket.Conn
+	g      *gocui.Gui
+	ch     chan interface{}
+	joined bool
 }
 
 var conn *connection
@@ -35,21 +38,21 @@ var conn *connection
 func connect(g *gocui.Gui) error {
 	fmt.Fprintf(status, "Connecting to %s\n", *address)
 
-	u := url.URL{Scheme: "ws", Host: *address, Path: "/socket"}
+	u := url.URL{Scheme: protocolWS, Host: *address, Path: "/socket"}
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		fmt.Fprintf(status, "Failed to connect: %v\n", err)
 	}
-	defer c.Close()
 
-	conn = &connection{ws: c}
+	conn = &connection{ws: c, g: g, ch: make(chan interface{}), joined: false}
+	go conn.writeLoop()
+	go conn.readLoop()
 	return nil
 }
 
 func (c *connection) Close() {
 	c.write(websocket.CloseMessage, []byte{})
-	c.ws.Close()
 }
 
 func (c *connection) write(mt int, payload []byte) error {
@@ -70,6 +73,31 @@ func (c *connection) readLoop() {
 			fmt.Fprintf(status, "Disconnected: %v\n", err)
 			return
 		}
+		var rec = make(map[string]interface{})
+		json.Unmarshal(data, &rec)
+
+		if !c.joined {
+			if s, ok := rec["success"].(bool); ok && s {
+				*authtoken = rec["authtoken"].(string)
+			} else {
+				switch rec["message"].(string) {
+				case "gamenotfound":
+					fmt.Fprintln(status, "Could not find the given game!")
+				case "gamestarted":
+					fmt.Fprintln(status, "That game has already started (try giving your authtoken?)")
+				case "full":
+					fmt.Fprintln(status, "That game is full (try giving your authtoken?)")
+				case "nameused":
+					fmt.Fprintln(status, "The name", *name, "is already in use (try giving your authtoken?)")
+				case "invalidname":
+					fmt.Fprintln(status, "Your name contains invalid characters or is too short or long")
+				default:
+					fmt.Fprintln(status, "Unknown error:", rec["message"].(string))
+				}
+			}
+			continue
+		}
+
 		fmt.Fprintf(output, "Received %s\n", string(data))
 	}
 }
@@ -79,7 +107,7 @@ func (c *connection) writeLoop() {
 	defer ticker.Stop()
 	for {
 		select {
-		case new, ok := <-messages:
+		case new, ok := <-conn.ch:
 			if !ok {
 				c.Close()
 				return

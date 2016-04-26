@@ -20,18 +20,28 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jroimartin/gocui"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strings"
-	"unicode/utf8"
 )
 
 var address = flag.String("address", "localhost:29305", "The address of the shitler server.")
+var secure = flag.Bool("secure", false, "Use secure connections (https/wss)")
 var name = flag.String("name", "CLI-Guest", "The name to join with.")
 var authtoken = flag.String("authtoken", "", "Auth token to retake username.")
+var protocolHTTP = "http"
+var protocolWS = "ws"
 
 var status, output, players, input, errView *gocui.View
 
 func main() {
 	flag.Parse()
+
+	if *secure {
+		protocolHTTP += "s"
+		protocolWS += "s"
+	}
 
 	g := gocui.NewGui()
 	if err := g.Init(); err != nil {
@@ -59,13 +69,27 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	nilrror = nil
 	var msg = make(map[string]string)
 
-	args := strings.Split(strings.TrimSpace(v.ViewBuffer()), " ")
+	args := strings.Split(strings.TrimSpace(v.Buffer()), " ")
 	command := strings.ToLower(args[0])
 	args = args[1:]
-	fmt.Fprintln(output, command, args)
+	v.Clear()
 
 	msg["type"] = command
 	switch command {
+	case "create":
+		u := url.URL{Scheme: protocolHTTP, Host: *address, Path: "/create"}
+		resp, err := http.DefaultClient.Get(u.String())
+		if err != nil {
+			fmt.Fprintln(output, "Failed to create game:", err)
+			return
+		}
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Fprintln(output, "Failed to create game:", err)
+			return
+		}
+		fmt.Fprintln(output, "Created game:", string(data))
+		return
 	case "chancellor":
 		msg["type"] = "pickchancellor"
 		msg["name"] = args[0]
@@ -101,8 +125,7 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 		return
 	}
 
-	messages <- msg
-	v.Clear()
+	conn.ch <- msg
 	return
 }
 
@@ -118,15 +141,15 @@ func load(g *gocui.Gui) error {
 func normalizePlayers(players map[string]string) string {
 	var maxLen int
 	for player := range players {
-		if utf8.RuneCountInString(player) > maxLen {
-			maxLen = utf8.RuneCountInString(player)
+		if len(player) > maxLen {
+			maxLen = len(player)
 		}
 	}
 	var buf bytes.Buffer
 	for player, role := range players {
 		buf.WriteString(player)
-		if utf8.RuneCountInString(player) < maxLen {
-			for i := utf8.RuneCountInString(player); i < maxLen; i++ {
+		if len(player) < maxLen {
+			for i := len(player); i < maxLen; i++ {
 				buf.WriteString(" ")
 			}
 		}
