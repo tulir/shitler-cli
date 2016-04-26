@@ -16,6 +16,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/jroimartin/gocui"
 	"strconv"
@@ -65,7 +66,7 @@ func receive(typ string, data map[string]interface{}) {
 	case "quit":
 		printOutput(data["name"], "left the game.")
 	case "connected":
-		printOutput(data["name"], "dataonnected.")
+		printOutput(data["name"], "connected.")
 	case "disconnected":
 		printOutput(data["name"], "disconnected.")
 	case "start":
@@ -92,7 +93,7 @@ func receive(typ string, data map[string]interface{}) {
 		}
 	case "president":
 		name, _ := data["name"].(string)
-		printOutput("The president is", name)
+		printOutput(name, "is now the president")
 		setStatus(name, " is choosing a chancellor")
 	case "startvote":
 		president, _ := data["president"].(string)
@@ -105,16 +106,17 @@ func receive(typ string, data map[string]interface{}) {
 	case "cards":
 		cs, _ := data["cards"].([]interface{})
 		discarding = make([]string, len(cs))
-		printOutputf("Discard one of the following: ")
+		var buf bytes.Buffer
+		buf.WriteString("Available cards - ")
 		for i, c := range cs {
 			card, _ := c.(string)
 			discarding[i] = card
-			printOutputf("%d: %s", i+1, card)
+			buf.WriteString(fmt.Sprintf("%d: %s", i+1, card))
 			if i != len(cs)-1 {
-				printOutputf(", ")
+				buf.WriteString(", ")
 			}
 		}
-		printOutputf("\n")
+		printOutput(buf.String())
 	case "presidentdiscard":
 		name, _ := data["name"].(string)
 		printOutput("The president is discarding a policy...")
@@ -124,6 +126,11 @@ func receive(typ string, data map[string]interface{}) {
 		printOutput("The chancellor is discarding a policy...")
 		setStatus(name, " to discard a policy")
 	case "table":
+		deck, _ := data["deck"].(float64)
+		discarded, _ := data["discarded"].(float64)
+		tableLiberal, _ := data["tableLiberal"].(float64)
+		tableFascist, _ := data["tableFascist"].(float64)
+		setTable(fmt.Sprintf("Deck: %d\nDiscarded: %d\n\nEnacted\n  Liberal: %d\n  Fascist: %d\n", int(deck), int(discarded), int(tableLiberal), int(tableFascist)))
 	case "enact":
 		president, _ := data["president"].(string)
 		chancellor, _ := data["chancellor"].(string)
@@ -132,6 +139,20 @@ func receive(typ string, data map[string]interface{}) {
 	case "forceenact":
 		policy, _ := data["policy"].(string)
 		printOutput("Three governments have failed and the frustrated populace has taken matters into their own hands, enacting a", policy, "policy.")
+	case "peek":
+		printOutput("The president has peeked at the next three cards.")
+	case "peekcards":
+		cs, _ := data["cards"].([]interface{})
+		var buf bytes.Buffer
+		buf.WriteString("The next three cards are ")
+		for i, c := range cs {
+			card, _ := c.(string)
+			buf.WriteString(card)
+			if i != len(cs)-1 {
+				buf.WriteString(", ")
+			}
+		}
+		printOutput(buf.String())
 	default:
 		printOutput("Unidentified message from server:", data)
 	}
@@ -156,6 +177,7 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	v.Clear()
 
 	msg["type"] = command
+Switch:
 	switch command {
 	case "create":
 		go createGame()
@@ -174,10 +196,19 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 		break
 	case "discard":
 		discard, err := strconv.Atoi(args[0])
-		if err != nil || discard < 1 || discard > 3 {
-			printOutput("Invalid discard:", args[0])
+		if err != nil {
+			for i, c := range discarding {
+				if c == strings.ToLower(args[0]) {
+					msg["index"] = strconv.Itoa(i)
+					break Switch
+				}
+			}
+			printOutput("There are no", args[0], "cards to discard")
+		} else if discard > len(discarding) || discard <= 0 {
+			printOutput("Invalid discard index", discard)
+		} else {
+			msg["index"] = strconv.Itoa(discard - 1)
 		}
-		msg["index"] = strconv.Itoa(discard - 1)
 	case "veto":
 		switch strings.ToLower(args[0]) {
 		case "request", "ask":

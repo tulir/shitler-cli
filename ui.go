@@ -20,6 +20,8 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
+var status, output, players, table, input, errView *gocui.View
+
 func printOutput(msg ...interface{}) {
 	g.Execute(func(g *gocui.Gui) error {
 		fmt.Fprintln(output, msg...)
@@ -50,6 +52,14 @@ func setPlayerList(list string) {
 	})
 }
 
+func setTable(t string) {
+	g.Execute(func(g *gocui.Gui) error {
+		table.Clear()
+		fmt.Fprintln(table, t)
+		return nil
+	})
+}
+
 func layout(g *gocui.Gui) (err error) {
 	maxX, maxY := g.Size()
 	if maxX < 70 || maxY < 15 {
@@ -73,12 +83,17 @@ func layout(g *gocui.Gui) (err error) {
 		return
 	}
 
-	output, err = g.SetView("output", 0, 3, maxX-29, maxY-4)
+	output, err = g.SetView("output", 0, 3, maxX-43, maxY-4)
 	if err != nil && err != gocui.ErrUnknownView {
 		return
 	}
 
 	players, err = g.SetView("players", maxX-28, 3, maxX-1, maxY-4)
+	if err != nil && err != gocui.ErrUnknownView {
+		return
+	}
+
+	table, err = g.SetView("table", maxX-42, 3, maxX-29, maxY-4)
 	if err != nil && err != gocui.ErrUnknownView {
 		return
 	}
@@ -95,6 +110,7 @@ func layout(g *gocui.Gui) (err error) {
 func load(g *gocui.Gui) error {
 	status.Title = "Status"
 	players.Title = "Players"
+	table.Title = "Table"
 	output.Title = "Output"
 	output.Wrap = true
 	output.Autoscroll = true

@@ -32,8 +32,6 @@ var discarding []string
 var protocolHTTP = "http"
 var protocolWS = "ws"
 
-var status, output, players, input, errView *gocui.View
-
 func main() {
 	flag.Parse()
 
