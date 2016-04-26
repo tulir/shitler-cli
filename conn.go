@@ -27,10 +27,11 @@ import (
 var interrupt = make(chan bool, 1)
 
 type connection struct {
-	ws     *websocket.Conn
-	g      *gocui.Gui
-	ch     chan interface{}
-	joined bool
+	ws      *websocket.Conn
+	g       *gocui.Gui
+	ch      chan interface{}
+	joined  bool
+	players map[string]string
 }
 
 var conn *connection
@@ -87,6 +88,7 @@ func (c *connection) readLoop() {
 				c.joined = true
 				status.Clear()
 				fmt.Fprintln(status, "In game", rec["game"])
+				fmt.Fprintln(output, "Successfully joined", rec["game"])
 			} else {
 				msg, ok := rec["message"].(string)
 				if !ok {
@@ -110,7 +112,34 @@ func (c *connection) readLoop() {
 			}
 			continue
 		}
-		fmt.Fprintf(output, "Received %s\n", string(data))
+		typ, ok := rec["type"].(string)
+		if !ok {
+			fmt.Fprintln(output, "Invalid message from server:", rec)
+		}
+		switch typ {
+		case "chat":
+			fmt.Fprintf(output, "<%s> %s", rec["sender"], rec["message"])
+		case "join":
+			fmt.Fprintln(output, rec["name"], "joined the game.")
+		case "quit":
+			fmt.Fprintln(output, rec["name"], "left the game.")
+		case "connected":
+			fmt.Fprintln(output, rec["name"], "reconnected.")
+		case "disconnected":
+			fmt.Fprintln(output, rec["name"], "disconnected.")
+		case "start":
+			fmt.Fprintln(output, "The game has started. Your role is", rec["role"])
+			players.Clear()
+			var ok bool
+			c.players, ok = rec["players"].(map[string]string)
+			if ok {
+				fmt.Fprintln(players, normalizePlayers(c.players))
+			} else {
+				fmt.Fprintln(players, "Failed to load players")
+			}
+		default:
+			fmt.Fprintln(output, "Unidentified message from server:", rec)
+		}
 	}
 }
 
@@ -124,13 +153,11 @@ func (c *connection) writeLoop() {
 				c.Close()
 				return
 			}
-			fmt.Fprintf(output, "Sending message %v...", new)
 			err := c.writeJSON(new)
 			if err != nil {
 				fmt.Fprintf(status, "Disconnected: %v\n", err)
 				return
 			}
-			fmt.Fprint(output, " done!\n")
 		case <-ticker.C:
 			err := c.write(websocket.PingMessage, []byte{})
 			if err != nil {

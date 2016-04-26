@@ -68,9 +68,18 @@ func main() {
 func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	nilrror = nil
 	var msg = make(map[string]string)
+	data := strings.TrimSpace(v.Buffer())
 
-	args := strings.Split(strings.TrimSpace(v.Buffer()), " ")
-	command := strings.ToLower(args[0])
+	if !strings.HasPrefix(data, "/") {
+		msg["type"] = "chat"
+		msg["message"] = data
+		v.Clear()
+		conn.ch <- msg
+		return
+	}
+
+	args := strings.Split(data, " ")
+	command := strings.ToLower(args[0])[1:]
 	args = args[1:]
 	v.Clear()
 
@@ -88,7 +97,7 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 			fmt.Fprintln(output, "Failed to create game:", err)
 			return
 		}
-		fmt.Fprintln(output, "Created game:", string(data))
+		fmt.Fprintln(output, "Created game", string(data))
 		return
 	case "chancellor":
 		msg["type"] = "pickchancellor"
