@@ -70,7 +70,7 @@ func layout(g *gocui.Gui) (err error) {
 
 	status, err = g.SetView("status", 0, 0, maxX-1, 2)
 	if err != nil && err != gocui.ErrUnknownView {
-		return err
+		return
 	}
 
 	output, err = g.SetView("output", 0, 3, maxX-29, maxY-4)
