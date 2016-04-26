@@ -118,7 +118,7 @@ func (c *connection) readLoop() {
 		}
 		switch typ {
 		case "chat":
-			printOutputf(c.g, "<%s> %s", rec["sender"], rec["message"])
+			printOutputf(c.g, "<%s> %s\n", rec["sender"], rec["message"])
 		case "join":
 			printOutput(c.g, rec["name"], "joined the game.")
 		case "quit":
@@ -128,9 +128,19 @@ func (c *connection) readLoop() {
 		case "disconnected":
 			printOutput(c.g, rec["name"], "disconnected.")
 		case "start":
-			printOutput(c.g, "The game has started. Your role is", rec["role"])
-			var ok bool
-			c.players, ok = rec["players"].(map[string]string)
+			role, _ := rec["role"].(string)
+			if role == "hitler" {
+				printOutput(c.g, "The game has started. You're Hitler!")
+			} else {
+				printOutput(c.g, "The game has started. You're a", role)
+			}
+
+			ps, ok := rec["players"].(map[string]interface{})
+			c.players = make(map[string]string)
+			for name, role := range ps {
+				r, _ := role.(string)
+				c.players[name] = r
+			}
 			if ok {
 				setPlayerList(c.g, normalizePlayers(c.players))
 			} else {
