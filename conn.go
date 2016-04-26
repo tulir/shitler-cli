@@ -86,7 +86,7 @@ func (c *connection) readLoop() {
 				*authtoken = rec["authtoken"].(string)
 				c.joined = true
 				status.Clear()
-				fmt.Fprintln(status, "In game")
+				fmt.Fprintln(status, "In game", rec["game"])
 			} else {
 				msg, ok := rec["message"].(string)
 				if !ok {
