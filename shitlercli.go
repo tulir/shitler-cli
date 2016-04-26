@@ -25,7 +25,10 @@ var secure = flag.BoolP("secure", "s", false, "Use secure connections (https/wss
 var name = flag.StringP("name", "n", "CLI-Guest", "The name to join with.")
 var authtoken = flag.StringP("authtoken", "t", "", "Auth token to retake username.")
 var g *gocui.Gui
+
 var playerList map[string]string
+var discarding []string
+
 var protocolHTTP = "http"
 var protocolWS = "ws"
 

@@ -26,15 +26,15 @@ func createGame() {
 	u := url.URL{Scheme: protocolHTTP, Host: *address, Path: "/create"}
 	resp, err := http.DefaultClient.Get(u.String())
 	if err != nil {
-		printOutput(g, "Failed to create game:", err)
+		printOutput("Failed to create game:", err)
 		return
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		printOutput(g, "Failed to create game:", err)
+		printOutput("Failed to create game:", err)
 		return
 	}
-	printOutput(g, "Created game", string(data))
+	printOutput("Created game", string(data))
 }
 
 func normalizePlayers(players map[string]string) string {

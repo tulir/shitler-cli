@@ -75,7 +75,7 @@ func (c *connection) readLoop() {
 		var rec = make(map[string]interface{})
 		err = json.Unmarshal(data, &rec)
 		if err != nil {
-			printOutput(g, err)
+			printOutput(err)
 		}
 		if !c.joined {
 			c.joined = receivePreJoin(rec)
@@ -83,7 +83,7 @@ func (c *connection) readLoop() {
 		}
 		typ, ok := rec["type"].(string)
 		if !ok {
-			printOutput(g, "Invalid message from server:", rec)
+			printOutput("Invalid message from server:", rec)
 		}
 		receive(typ, rec)
 	}
@@ -101,13 +101,13 @@ func (c *connection) writeLoop() {
 			}
 			err := c.writeJSON(new)
 			if err != nil {
-				setStatus(g, "Disconnected:", err)
+				setStatus("Disconnected:", err)
 				return
 			}
 		case <-ticker.C:
 			err := c.write(websocket.PingMessage, []byte{})
 			if err != nil {
-				setStatus(g, "Disconnected:", err)
+				setStatus("Disconnected:", err)
 				return
 			}
 		case <-interrupt:

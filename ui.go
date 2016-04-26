@@ -20,21 +20,21 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-func printOutput(g *gocui.Gui, msg ...interface{}) {
+func printOutput(msg ...interface{}) {
 	g.Execute(func(g *gocui.Gui) error {
 		fmt.Fprintln(output, msg...)
 		return nil
 	})
 }
 
-func printOutputf(g *gocui.Gui, msg string, args ...interface{}) {
+func printOutputf(msg string, args ...interface{}) {
 	g.Execute(func(g *gocui.Gui) error {
 		fmt.Fprintf(output, msg, args...)
 		return nil
 	})
 }
 
-func setStatus(g *gocui.Gui, msg ...interface{}) {
+func setStatus(msg ...interface{}) {
 	g.Execute(func(g *gocui.Gui) error {
 		status.Clear()
 		fmt.Fprint(status, msg...)
@@ -42,7 +42,7 @@ func setStatus(g *gocui.Gui, msg ...interface{}) {
 	})
 }
 
-func setPlayerList(g *gocui.Gui, list string) {
+func setPlayerList(list string) {
 	g.Execute(func(g *gocui.Gui) error {
 		players.Clear()
 		fmt.Fprintln(players, list)

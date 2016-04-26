@@ -18,38 +18,39 @@ package main
 import (
 	"fmt"
 	"github.com/jroimartin/gocui"
+	"strconv"
 	"strings"
 )
 
 func receivePreJoin(data map[string]interface{}) bool {
 	success, ok := data["success"].(bool)
 	if !ok {
-		printOutput(g, "Invalid map", data)
+		printOutput("Invalid map", data)
 	} else if success {
 		*authtoken = data["authtoken"].(string)
 		status.Clear()
 		fmt.Fprintln(status, "In game", data["game"])
-		printOutput(g, "Successfully joined", data["game"])
+		printOutput("Successfully joined", data["game"])
 		return true
 	} else {
 		msg, ok := data["message"].(string)
 		if !ok {
-			printOutput(g, "Invalid map", data)
+			printOutput("Invalid map", data)
 			return false
 		}
 		switch msg {
 		case "gamenotfound":
-			printOutput(g, "Could not find the given game!")
+			printOutput("Could not find the given game!")
 		case "gamestarted":
-			printOutput(g, "That game has already started (try giving your authtoken?)")
+			printOutput("That game has already started (try giving your authtoken?)")
 		case "full":
-			printOutput(g, "That game is full (try giving your authtoken?)")
+			printOutput("That game is full (try giving your authtoken?)")
 		case "nameused":
-			printOutput(g, "The name", *name, "is already in use (try giving your authtoken?)")
+			printOutput("The name", *name, "is already in use (try giving your authtoken?)")
 		case "invalidname":
-			printOutput(g, "Your name contains invalid characters or is too short or long")
+			printOutput("Your name contains invalid characters or is too short or long")
 		default:
-			printOutput(g, "Unknown error:", data["message"].(string))
+			printOutput("Unknown error:", data["message"].(string))
 		}
 	}
 	return false
@@ -58,21 +59,21 @@ func receivePreJoin(data map[string]interface{}) bool {
 func receive(typ string, data map[string]interface{}) {
 	switch typ {
 	case "chat":
-		printOutputf(g, "<%s> %s\n", data["sender"], data["message"])
+		printOutputf("<%s> %s\n", data["sender"], data["message"])
 	case "join":
-		printOutput(g, data["name"], "joined the game.")
+		printOutput(data["name"], "joined the game.")
 	case "quit":
-		printOutput(g, data["name"], "left the game.")
+		printOutput(data["name"], "left the game.")
 	case "connected":
-		printOutput(g, data["name"], "dataonnected.")
+		printOutput(data["name"], "dataonnected.")
 	case "disconnected":
-		printOutput(g, data["name"], "disconnected.")
+		printOutput(data["name"], "disconnected.")
 	case "start":
 		role, _ := data["role"].(string)
 		if role == "hitler" {
-			printOutput(g, "The game has started. You're Hitler!")
+			printOutput("The game has started. You're Hitler!")
 		} else {
-			printOutput(g, "The game has started. You're a", role)
+			printOutput("The game has started. You're a", role)
 		}
 
 		ps, ok := data["players"].(map[string]interface{})
@@ -85,41 +86,54 @@ func receive(typ string, data map[string]interface{}) {
 			playerList[n] = rs
 		}
 		if ok {
-			setPlayerList(g, normalizePlayers(playerList))
+			setPlayerList(normalizePlayers(playerList))
 		} else {
-			setPlayerList(g, "Failed to load players")
+			setPlayerList("Failed to load players")
 		}
 	case "president":
 		name, _ := data["name"].(string)
-		printOutput(g, "The president is", name)
-		setStatus(g, name, " is choosing a chancellor")
+		printOutput("The president is", name)
+		setStatus(name, " is choosing a chancellor")
 	case "startvote":
 		president, _ := data["president"].(string)
 		chancellor, _ := data["chancellor"].(string)
-		printOutput(g, president, "has chosen", chancellor, "as the chancellor.")
-		setStatus(g, "Voting for president ", president, " and chancellor ", chancellor)
+		printOutput(president, "has chosen", chancellor, "as the chancellor.")
+		setStatus("Voting for president ", president, " and chancellor ", chancellor)
 	case "vote":
 		vote, _ := data["vote"].(string)
-		printOutputf(g, "You voted %s!\n", strings.Title(vote))
+		printOutputf("You voted %s!\n", strings.Title(vote))
+	case "cards":
+		cs, _ := data["cards"].([]interface{})
+		discarding = make([]string, len(cs))
+		printOutputf("Discard one of the following: ")
+		for i, c := range cs {
+			card, _ := c.(string)
+			discarding[i] = card
+			printOutputf("%d: %s", i+1, card)
+			if i != len(cs)-1 {
+				printOutputf(", ")
+			}
+		}
+		printOutputf("\n")
 	case "presidentdiscard":
 		name, _ := data["name"].(string)
-		printOutput(g, "The president is discarding a card...")
-		setStatus(g, name, " to discard a card")
+		printOutput("The president is discarding a policy...")
+		setStatus(name, " to discard a policy")
 	case "chancellordiscard":
 		name, _ := data["name"].(string)
-		printOutput(g, "The chancellor is discarding a card...")
-		setStatus(g, name, " to discard a card")
+		printOutput("The chancellor is discarding a policy...")
+		setStatus(name, " to discard a policy")
 	case "table":
 	case "enact":
 		president, _ := data["president"].(string)
 		chancellor, _ := data["chancellor"].(string)
 		policy, _ := data["policy"].(string)
-		printOutput(g, president, "and", chancellor, "have enacted a", policy, "policy.")
+		printOutput(president, "and", chancellor, "have enacted a", policy, "policy.")
 	case "forceenact":
 		policy, _ := data["policy"].(string)
-		printOutput(g, "Three governments have failed and the frustrated populace has taken matters into their own hands, enacting a", policy, "policy.")
+		printOutput("Three governments have failed and the frustrated populace has taken matters into their own hands, enacting a", policy, "policy.")
 	default:
-		printOutput(g, "Unidentified message from server:", data)
+		printOutput("Unidentified message from server:", data)
 	}
 }
 
@@ -159,7 +173,11 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	case "start":
 		break
 	case "discard":
-		msg["index"] = args[0]
+		discard, err := strconv.Atoi(args[0])
+		if err != nil || discard < 1 || discard > 3 {
+			printOutput("Invalid discard:", args[0])
+		}
+		msg["index"] = strconv.Itoa(discard - 1)
 	case "veto":
 		switch strings.ToLower(args[0]) {
 		case "request", "ask":
