@@ -72,6 +72,13 @@ func (c *connection) readLoop() {
 			fmt.Fprintf(status, "Disconnected: %v\n", err)
 			return
 		}
+		if string(data) == "connected-other" {
+			printOutput("Someone else connected with your name!")
+			c.joined = false
+			players.Clear()
+			table.Clear()
+			continue
+		}
 		var rec = make(map[string]interface{})
 		err = json.Unmarshal(data, &rec)
 		if err != nil {
