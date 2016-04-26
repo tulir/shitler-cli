@@ -97,6 +97,7 @@ func load(g *gocui.Gui) error {
 	players.Title = "Players"
 	output.Title = "Output"
 	output.Wrap = true
+	output.Autoscroll = true
 	input.Title = "Input"
 	input.Editable = true
 	return nil
