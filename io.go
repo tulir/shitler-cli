@@ -92,7 +92,32 @@ func receive(typ string, data map[string]interface{}) {
 	case "president":
 		name, _ := data["name"].(string)
 		printOutput(g, "The president is", name)
-		setStatus(g, name, " is choosing a chancellor.")
+		setStatus(g, name, " is choosing a chancellor")
+	case "startvote":
+		president, _ := data["president"].(string)
+		chancellor, _ := data["chancellor"].(string)
+		printOutput(g, president, "has chosen", chancellor, "as the chancellor.")
+		setStatus(g, "Voting for president ", president, " and chancellor ", chancellor)
+	case "vote":
+		vote, _ := data["vote"].(string)
+		printOutputf(g, "You voted %s!\n", strings.Title(vote))
+	case "presidentdiscard":
+		name, _ := data["name"].(string)
+		printOutput(g, "The president is discarding a card...")
+		setStatus(g, name, " to discard a card")
+	case "chancellordiscard":
+		name, _ := data["name"].(string)
+		printOutput(g, "The chancellor is discarding a card...")
+		setStatus(g, name, " to discard a card")
+	case "table":
+	case "enact":
+		president, _ := data["president"].(string)
+		chancellor, _ := data["chancellor"].(string)
+		policy, _ := data["policy"].(string)
+		printOutput(g, president, "and", chancellor, "have enacted a", policy, "policy.")
+	case "forceenact":
+		policy, _ := data["policy"].(string)
+		printOutput(g, "Three governments have failed and the frustrated populace has taken matters into their own hands, enacting a", policy, "policy.")
 	default:
 		printOutput(g, "Unidentified message from server:", data)
 	}
