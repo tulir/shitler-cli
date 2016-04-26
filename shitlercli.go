@@ -16,14 +16,14 @@
 package main
 
 import (
+	"flag"
 	"github.com/jroimartin/gocui"
-	flag "github.com/ogier/pflag"
 )
 
-var address = flag.StringP("address", "a", "localhost:29305", "The address of the shitler server.")
-var secure = flag.BoolP("secure", "s", false, "Use secure connections (https/wss)")
-var name = flag.StringP("name", "n", "CLI-Guest", "The name to join with.")
-var authtoken = flag.StringP("authtoken", "t", "", "Auth token to retake username.")
+var address = flag.String("address", "localhost:29305", "The address of the shitler server.")
+var secure = flag.Bool("secure", false, "Use secure connections (https/wss)")
+var name = flag.String("name", "CLI-Guest", "The name to join with.")
+var authtoken = flag.String("authtoken", "", "Auth token to retake username.")
 var g *gocui.Gui
 
 var playerList map[string]string
