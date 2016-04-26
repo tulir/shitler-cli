@@ -20,6 +20,36 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
+func printOutput(g *gocui.Gui, msg ...interface{}) {
+	g.Execute(func(g *gocui.Gui) error {
+		fmt.Fprintln(output, msg...)
+		return nil
+	})
+}
+
+func printOutputf(g *gocui.Gui, msg string, args ...interface{}) {
+	g.Execute(func(g *gocui.Gui) error {
+		fmt.Fprintf(output, msg, args...)
+		return nil
+	})
+}
+
+func setStatus(g *gocui.Gui, msg ...interface{}) {
+	g.Execute(func(g *gocui.Gui) error {
+		status.Clear()
+		fmt.Fprint(status, msg...)
+		return nil
+	})
+}
+
+func setPlayerList(g *gocui.Gui, list string) {
+	g.Execute(func(g *gocui.Gui) error {
+		players.Clear()
+		fmt.Fprintln(players, list)
+		return nil
+	})
+}
+
 func layout(g *gocui.Gui) (err error) {
 	maxX, maxY := g.Size()
 	if maxX < 70 || maxY < 15 {
