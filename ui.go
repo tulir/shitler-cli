@@ -91,3 +91,13 @@ func layout(g *gocui.Gui) (err error) {
 
 	return nil
 }
+
+func load(g *gocui.Gui) error {
+	status.Title = "Status"
+	players.Title = "Players"
+	output.Title = "Output"
+	output.Wrap = true
+	input.Title = "Input"
+	input.Editable = true
+	return nil
+}

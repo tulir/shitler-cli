@@ -60,12 +60,3 @@ func main() {
 		panic(err)
 	}
 }
-
-func load(g *gocui.Gui) error {
-	status.Title = "Status"
-	players.Title = "Players"
-	output.Wrap = true
-	input.Title = "Input"
-	input.Editable = true
-	return nil
-}
