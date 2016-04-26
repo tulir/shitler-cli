@@ -1,0 +1,23 @@
+image: golang:1.6
+
+before_script:
+- "go get -u github.com/gorilla/websocket"
+- "go get -u github.com/jroimartin/gocui"
+- "mkdir -p /go/src/maunium.net/go"
+- "ln -s /builds/Tulir293/shitler-cli /go/src/maunium.net/go/shitler-cli"
+
+build:
+    script:
+    - "env GOOS=linux GOARCH=amd64 go build -o shitler_amd64 maunium.net/go/shitler-cli"
+    - "env GOOS=linux GOARCH=arm go build -o shitler_arm maunium.net/go/shitler-cli"
+    - "env GOOS=windows GOARCH=amd64 go build -o shitler.exe maunium.net/go/shitler-cli"
+    stage: build
+    tags:
+    - golang
+    artifacts:
+        paths:
+        - shitler_amd64
+        - shitler_arm
+        - shitler.exe
+        - LICENSE
+        - README.md
