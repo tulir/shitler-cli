@@ -84,7 +84,7 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	v.Clear()
 
 	msg["type"] = command
-Switch:
+
 	switch command {
 	case "create":
 		go createGame()
@@ -93,36 +93,13 @@ Switch:
 		msg["type"] = "pickchancellor"
 		msg["name"] = args[0]
 	case "vote":
-		switch strings.ToLower(args[0]) {
-		case "ja", "yes", "1", "true":
-			msg["vote"] = "ja"
-		case "nein", "no", "0", "false":
-			msg["vote"] = "nein"
-		}
+		msg["vote"] = cmdVote(args[0])
 	case "start":
 		break
 	case "discard":
-		discard, err := strconv.Atoi(args[0])
-		if err != nil {
-			for i, c := range discarding {
-				if c == strings.ToLower(args[0]) {
-					msg["index"] = strconv.Itoa(i)
-					break Switch
-				}
-			}
-			printOutput("There are no", args[0], "cards to discard")
-		} else if discard > len(discarding) || discard <= 0 {
-			printOutput("Invalid discard index", discard)
-		} else {
-			msg["index"] = strconv.Itoa(discard - 1)
-		}
+		msg["index"] = cmdDiscard(args[0])
 	case "veto":
-		switch strings.ToLower(args[0]) {
-		case "request", "ask":
-			msg["type"] = "vetorequest"
-		case "accept", "yes":
-			msg["type"] = "vetoaccept"
-		}
+		msg["type"] = cmdVetoRequest(args[0])
 	case "president":
 		msg["type"] = "presidentselect"
 		fallthrough
@@ -139,4 +116,43 @@ Switch:
 
 	conn.ch <- msg
 	return
+}
+
+func cmdVote(arg string) string {
+	switch strings.ToLower(arg) {
+	case "ja", "yes", "1", "true":
+		return "ja"
+	case "nein", "no", "0", "false":
+		return "nein"
+	default:
+		return ""
+	}
+}
+
+func cmdVetoRequest(arg string) string {
+	switch strings.ToLower(arg) {
+	case "request", "ask":
+		return "vetorequest"
+	case "accept", "yes":
+		return "vetoaccept"
+	default:
+		return ""
+	}
+}
+
+func cmdDiscard(arg string) string {
+	discard, err := strconv.Atoi(arg)
+	if err != nil {
+		for i, c := range discarding {
+			if c == strings.ToLower(arg) {
+				return strconv.Itoa(i)
+			}
+		}
+		printOutput("There are no", arg, "cards to discard")
+		return ""
+	} else if discard > len(discarding) || discard <= 0 {
+		printOutput("Invalid discard index", discard)
+		return ""
+	}
+	return strconv.Itoa(discard - 1)
 }

@@ -63,17 +63,9 @@ func setTable(t string) {
 func layout(g *gocui.Gui) (err error) {
 	maxX, maxY := g.Size()
 	if maxX < 70 || maxY < 15 {
-		errView, err = g.SetView("error", 0, 0, maxX-1, maxY-1)
-		if checkErr(err) {
-			return
-		}
-		errView.Wrap = true
-		errView.Clear()
-		fmt.Fprintf(errView, "Window too small!")
+		windowTooSmall(maxX, maxY)
 		return nil
-	}
-
-	if errView != nil {
+	} else if errView != nil {
 		g.DeleteView(errView.Name())
 		errView = nil
 	}
@@ -105,6 +97,17 @@ func layout(g *gocui.Gui) (err error) {
 	g.SetCurrentView("input")
 
 	return nil
+}
+
+func windowTooSmall(maxX, maxY int) {
+	var err error
+	errView, err = g.SetView("error", 0, 0, maxX-1, maxY-1)
+	if checkErr(err) {
+		return
+	}
+	errView.Wrap = true
+	errView.Clear()
+	fmt.Fprintf(errView, "Window too small!")
 }
 
 func checkErr(err error) bool {
