@@ -21,29 +21,6 @@ import (
 	"strings"
 )
 
-var recHandlers map[string]func(data map[string]interface{})
-
-func init() {
-	recHandlers = make(map[string]func(data map[string]interface{}))
-	recHandlers["chat"] = recChat
-	recHandlers["join"] = recJoin
-	recHandlers["quit"] = recQuit
-	recHandlers["connect"] = recConnect
-	recHandlers["disconnect"] = recDisconnect
-	recHandlers["start"] = recStart
-	recHandlers["president"] = recPresident
-	recHandlers["startvote"] = recStartVote
-	recHandlers["vote"] = recVote
-	recHandlers["cards"] = recCards
-	recHandlers["presidentdiscard"] = recPresidentDiscard
-	recHandlers["chancellordiscard"] = recChancellorDiscard
-	recHandlers["table"] = recTable
-	recHandlers["enact"] = recEnact
-	recHandlers["forceenact"] = recForceEnact
-	recHandlers["peek"] = recPeek
-	recHandlers["peekcards"] = recPeekCards
-}
-
 func recChat(data map[string]interface{}) {
 	printOutputf("<%s> %s\n", data["sender"], data["message"])
 }
