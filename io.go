@@ -43,6 +43,15 @@ func init() {
 	recHandlers["forceenact"] = recForceEnact
 	recHandlers["peek"] = recPeek
 	recHandlers["peekcards"] = recPeekCards
+	recHandlers["investigateresult"] = recInvestigateResult
+	recHandlers["investigate"] = recInvestigate
+	recHandlers["presidentselect"] = recPresidentSelect
+	recHandlers["execute"] = recExecute
+	recHandlers["investigated"] = recInvestigated
+	recHandlers["presidentselected"] = recPresidentSelected
+	recHandlers["executed"] = recExecuted
+	recHandlers["end"] = recEnd
+	recHandlers["error"] = recError
 }
 
 func receivePreJoin(data map[string]interface{}) bool {

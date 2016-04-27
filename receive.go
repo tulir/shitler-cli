@@ -148,3 +148,70 @@ func recPeekCards(data map[string]interface{}) {
 	}
 	printOutput(buf.String())
 }
+
+func recInvestigateResult(data map[string]interface{}) {
+	name, _ := data["name"].(string)
+	role, _ := data["result"].(string)
+	printOutput(name, "is a", role)
+	playerList[name] = role
+	setPlayerList(normalizePlayers(playerList))
+}
+
+func recInvestigate(data map[string]interface{}) {
+	president, _ := data["president"].(string)
+	printOutput("The president will now investigate a player.")
+	setStatus(president, " is choosing a player to investigate")
+}
+
+func recPresidentSelect(data map[string]interface{}) {
+	president, _ := data["president"].(string)
+	printOutput("The president will now select the next president.")
+	setStatus(president, " is selecting the next president")
+}
+
+func recExecute(data map[string]interface{}) {
+	president, _ := data["president"].(string)
+	printOutput("The president will now execute a player.")
+	setStatus(president, " is choosing a player to execute")
+}
+
+func recInvestigated(data map[string]interface{}) {
+	president, _ := data["president"].(string)
+	name, _ := data["name"].(string)
+	printOutput(president, "has investigated", name)
+}
+
+func recPresidentSelected(data map[string]interface{}) {
+	president, _ := data["president"].(string)
+	name, _ := data["name"].(string)
+	printOutput(president, "has chosen", name, "as the special president.")
+}
+
+func recExecuted(data map[string]interface{}) {
+	president, _ := data["president"].(string)
+	name, _ := data["name"].(string)
+	printOutput(president, "has executed", name+".")
+}
+
+func recError(data map[string]interface{}) {
+	message, _ := data["message"].(string)
+	printOutput("The server has encountered an internal error:", message)
+}
+
+func recEnd(data map[string]interface{}) {
+	winner, _ := data["winner"].(string)
+	printOutput("Game over!", strings.Title(winner)+"s", "won!")
+	setStatus("Game over!")
+
+	ps, ok := data["roles"].(map[string]interface{})
+	playerList = make(map[string]string)
+	for n, r := range ps {
+		rs, _ := r.(string)
+		playerList[n] = rs
+	}
+	if ok {
+		setPlayerList(normalizePlayers(playerList))
+	} else {
+		setPlayerList("Failed to load players")
+	}
+}
