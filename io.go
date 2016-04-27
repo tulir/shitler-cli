@@ -29,8 +29,8 @@ func init() {
 	recHandlers["chat"] = recChat
 	recHandlers["join"] = recJoin
 	recHandlers["quit"] = recQuit
-	recHandlers["connect"] = recConnect
-	recHandlers["disconnect"] = recDisconnect
+	recHandlers["connected"] = recConnect
+	recHandlers["disconnected"] = recDisconnect
 	recHandlers["start"] = recStart
 	recHandlers["president"] = recPresident
 	recHandlers["startvote"] = recStartVote
