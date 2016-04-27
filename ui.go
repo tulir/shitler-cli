@@ -64,7 +64,7 @@ func layout(g *gocui.Gui) (err error) {
 	maxX, maxY := g.Size()
 	if maxX < 70 || maxY < 15 {
 		errView, err = g.SetView("error", 0, 0, maxX-1, maxY-1)
-		if err != nil && err != gocui.ErrUnknownView {
+		if checkErr(err) {
 			return
 		}
 		errView.Wrap = true
@@ -79,32 +79,36 @@ func layout(g *gocui.Gui) (err error) {
 	}
 
 	status, err = g.SetView("status", 0, 0, maxX-1, 2)
-	if err != nil && err != gocui.ErrUnknownView {
+	if checkErr(err) {
 		return
 	}
 
 	output, err = g.SetView("output", 0, 3, maxX-43, maxY-4)
-	if err != nil && err != gocui.ErrUnknownView {
+	if checkErr(err) {
 		return
 	}
 
 	players, err = g.SetView("players", maxX-28, 3, maxX-1, maxY-4)
-	if err != nil && err != gocui.ErrUnknownView {
+	if checkErr(err) {
 		return
 	}
 
 	table, err = g.SetView("table", maxX-42, 3, maxX-29, maxY-4)
-	if err != nil && err != gocui.ErrUnknownView {
+	if checkErr(err) {
 		return
 	}
 
 	input, err = g.SetView("input", 0, maxY-3, maxX-1, maxY-1)
-	if err != nil && err != gocui.ErrUnknownView {
+	if checkErr(err) {
 		return
 	}
 	g.SetCurrentView("input")
 
 	return nil
+}
+
+func checkErr(err error) bool {
+	return err != nil && err != gocui.ErrUnknownView
 }
 
 func load(g *gocui.Gui) error {

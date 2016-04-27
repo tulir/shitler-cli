@@ -16,7 +16,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/jroimartin/gocui"
 	"strconv"
@@ -58,103 +57,11 @@ func receivePreJoin(data map[string]interface{}) bool {
 }
 
 func receive(typ string, data map[string]interface{}) {
-	switch typ {
-	case "chat":
-		printOutputf("<%s> %s\n", data["sender"], data["message"])
-	case "join":
-		printOutput(data["name"], "joined the game.")
-	case "quit":
-		printOutput(data["name"], "left the game.")
-	case "connected":
-		printOutput(data["name"], "connected.")
-	case "disconnected":
-		printOutput(data["name"], "disconnected.")
-	case "start":
-		role, _ := data["role"].(string)
-		if role == "hitler" {
-			printOutput("The game has started. You're Hitler!")
-		} else {
-			printOutput("The game has started. You're a", role)
-		}
-
-		ps, ok := data["players"].(map[string]interface{})
-		playerList = make(map[string]string)
-		for n, r := range ps {
-			rs, _ := r.(string)
-			if n == *name {
-				rs = role
-			}
-			playerList[n] = rs
-		}
-		if ok {
-			setPlayerList(normalizePlayers(playerList))
-		} else {
-			setPlayerList("Failed to load players")
-		}
-	case "president":
-		name, _ := data["name"].(string)
-		printOutput(name, "is now the president")
-		setStatus(name, " is choosing a chancellor")
-	case "startvote":
-		president, _ := data["president"].(string)
-		chancellor, _ := data["chancellor"].(string)
-		printOutput(president, "has chosen", chancellor, "as the chancellor.")
-		setStatus("Voting for president ", president, " and chancellor ", chancellor)
-	case "vote":
-		vote, _ := data["vote"].(string)
-		printOutputf("You voted %s!\n", strings.Title(vote))
-	case "cards":
-		cs, _ := data["cards"].([]interface{})
-		discarding = make([]string, len(cs))
-		var buf bytes.Buffer
-		buf.WriteString("Available cards - ")
-		for i, c := range cs {
-			card, _ := c.(string)
-			discarding[i] = card
-			buf.WriteString(fmt.Sprintf("%d: %s", i+1, card))
-			if i != len(cs)-1 {
-				buf.WriteString(", ")
-			}
-		}
-		printOutput(buf.String())
-	case "presidentdiscard":
-		name, _ := data["name"].(string)
-		printOutput("The president is discarding a policy...")
-		setStatus(name, " to discard a policy")
-	case "chancellordiscard":
-		name, _ := data["name"].(string)
-		printOutput("The chancellor is discarding a policy...")
-		setStatus(name, " to discard a policy")
-	case "table":
-		deck, _ := data["deck"].(float64)
-		discarded, _ := data["discarded"].(float64)
-		tableLiberal, _ := data["tableLiberal"].(float64)
-		tableFascist, _ := data["tableFascist"].(float64)
-		setTable(fmt.Sprintf("Deck: %d\nDiscarded: %d\n\nEnacted\n  Liberal: %d\n  Fascist: %d\n", int(deck), int(discarded), int(tableLiberal), int(tableFascist)))
-	case "enact":
-		president, _ := data["president"].(string)
-		chancellor, _ := data["chancellor"].(string)
-		policy, _ := data["policy"].(string)
-		printOutput(president, "and", chancellor, "have enacted a", policy, "policy.")
-	case "forceenact":
-		policy, _ := data["policy"].(string)
-		printOutput("Three governments have failed and the frustrated populace has taken matters into their own hands, enacting a", policy, "policy.")
-	case "peek":
-		printOutput("The president has peeked at the next three cards.")
-	case "peekcards":
-		cs, _ := data["cards"].([]interface{})
-		var buf bytes.Buffer
-		buf.WriteString("The next three cards are ")
-		for i, c := range cs {
-			card, _ := c.(string)
-			buf.WriteString(card)
-			if i != len(cs)-1 {
-				buf.WriteString(", ")
-			}
-		}
-		printOutput(buf.String())
-	default:
+	handler, ok := recHandlers[typ]
+	if !ok {
 		printOutput("Unidentified message from server:", data)
+	} else {
+		handler(data)
 	}
 }
 
