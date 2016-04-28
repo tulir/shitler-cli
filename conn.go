@@ -27,9 +27,10 @@ import (
 var interrupt = make(chan bool, 1)
 
 type connection struct {
-	ws     *websocket.Conn
-	ch     chan interface{}
-	joined bool
+	ws       *websocket.Conn
+	ch       chan interface{}
+	readDone chan bool
+	joined   bool
 }
 
 var conn *connection
@@ -44,14 +45,19 @@ func connect(g *gocui.Gui) error {
 		fmt.Fprintf(status, "Failed to connect: %v\n", err)
 	}
 
-	conn = &connection{ws: c, ch: make(chan interface{}), joined: false}
+	conn = &connection{ws: c, ch: make(chan interface{}), joined: false, readDone: make(chan bool)}
 	go conn.writeLoop()
 	go conn.readLoop()
 	return nil
 }
 
 func (c *connection) Close() {
-	c.write(websocket.CloseMessage, []byte{})
+	c.write(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	select {
+	case <-c.readDone:
+	case <-time.After(time.Second):
+	}
+	c.ws.Close()
 }
 
 func (c *connection) write(mt int, payload []byte) error {
@@ -66,10 +72,12 @@ func (c *connection) writeJSON(payload interface{}) error {
 
 func (c *connection) readLoop() {
 	defer c.Close()
+	defer close(c.readDone)
 	for {
 		_, data, err := c.ws.ReadMessage()
 		if err != nil {
 			fmt.Fprintf(status, "Disconnected: %v\n", err)
+			c.readDone <- true
 			return
 		}
 		if string(data) == "connected-other" {
