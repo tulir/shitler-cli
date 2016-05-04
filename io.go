@@ -121,6 +121,8 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	case "create":
 		go createGame()
 		return
+	case "quit":
+		msg["type"] = "quit"
 	case "chancellor":
 		msg["type"] = "pickchancellor"
 		msg["name"] = args[0]
