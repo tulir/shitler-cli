@@ -26,19 +26,31 @@ func recChat(data map[string]interface{}) {
 }
 
 func recJoin(data map[string]interface{}) {
-	printOutput(data["name"], "joined the game.")
+	name, _ := data["name"].(string)
+	printOutput(name, "joined the game.")
+	lobbyPlayers[name] = true
+	updateLobbyPlayers()
 }
 
 func recQuit(data map[string]interface{}) {
-	printOutput(data["name"], "left the game.")
+	name, _ := data["name"].(string)
+	printOutput(name, "left the game.")
+	delete(lobbyPlayers, name)
+	updateLobbyPlayers()
 }
 
 func recConnect(data map[string]interface{}) {
-	printOutput(data["name"], "connected.")
+	name, _ := data["name"].(string)
+	printOutput(name, "connected.")
+	lobbyPlayers[name] = true
+	updateLobbyPlayers()
 }
 
 func recDisconnect(data map[string]interface{}) {
-	printOutput(data["name"], "disconnected.")
+	name, _ := data["name"].(string)
+	printOutput(name, "disconnected.")
+	lobbyPlayers[name] = false
+	updateLobbyPlayers()
 }
 
 func recStart(data map[string]interface{}) {

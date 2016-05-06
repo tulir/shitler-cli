@@ -26,6 +26,7 @@ var name = flag.String("name", "CLI-Guest", "The name to join with.")
 var authtoken = flag.String("authtoken", "", "Auth token to retake username.")
 var g *gocui.Gui
 
+var lobbyPlayers map[string]bool
 var playerList map[string]string
 var discarding []string
 

@@ -59,10 +59,15 @@ func receivePreJoin(data map[string]interface{}) bool {
 	if !ok {
 		printOutput("Invalid map", data)
 	} else if success {
-		*authtoken = data["authtoken"].(string)
+		*authtoken, _ = data["authtoken"].(string)
 		status.Clear()
 		fmt.Fprintln(status, "In game", data["game"])
 		printOutput("Successfully joined", data["game"])
+		lobbyPlayers = make(map[string]bool)
+		for key, val := range data["players"].(map[string]interface{}) {
+			lobbyPlayers[key] = val.(bool)
+		}
+		updateLobbyPlayers()
 		return true
 	} else {
 		msg, ok := data["message"].(string)

@@ -60,6 +60,20 @@ func setTable(t string) {
 	})
 }
 
+func updateLobbyPlayers() {
+	g.Execute(func(g *gocui.Gui) error {
+		players.Clear()
+		for player, connected := range lobbyPlayers {
+			if connected {
+				fmt.Fprintf(players, "%s\n", player)
+			} else {
+				fmt.Fprintf(players, "(%s)\n", player)
+			}
+		}
+		return nil
+	})
+}
+
 func layout(g *gocui.Gui) (err error) {
 	maxX, maxY := g.Size()
 	if maxX < 70 || maxY < 15 {
