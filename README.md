@@ -1,5 +1,7 @@
 # Secret Hitler CLI client
-A simple CLI client for my Secret Hitler server, [shitlerd](https://git.maunium.net/Tulir293/shitlerd).
+[![License](http://img.shields.io/:license-gpl3-blue.svg?style=flat-square)](http://www.gnu.org/licenses/gpl-3.0.html)
+
+A simple CLI client for my Secret Hitler server, [shitlerd](https://github.com/tulir293/shitlerd).
 
 ## Compiling
 Install and set up [Go](https://golang.org/) and run `go get maunium.net/go/shitler-cli`
