@@ -1,5 +1,5 @@
 // shitler-cli - A command-line client for shitlerd
-// Copyright (C) 2016 Tulir Asokan
+// Copyright (C) 2016-2017 Tulir Asokan
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
