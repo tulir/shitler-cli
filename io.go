@@ -17,9 +17,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/jroimartin/gocui"
+	"os"
 	"strconv"
 	"strings"
+
+	"github.com/jroimartin/gocui"
 )
 
 var recHandlers map[string]func(data map[string]interface{})
@@ -106,11 +108,12 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	nilrror = nil
 	var msg = make(map[string]string)
 	data := strings.TrimSpace(v.Buffer())
+	v.Clear()
+	v.SetCursor(0, 0)
 
 	if !strings.HasPrefix(data, "/") {
 		msg["type"] = "chat"
 		msg["message"] = data
-		v.Clear()
 		conn.ch <- msg
 		return
 	}
@@ -126,8 +129,13 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	case "create":
 		go createGame()
 		return
-	case "quit":
+	case "part":
 		msg["type"] = "quit"
+	case "quit":
+		conn.Close()
+		g.Close()
+		os.Exit(0)
+		return
 	case "chancellor":
 		msg["type"] = "pickchancellor"
 		msg["name"] = args[0]

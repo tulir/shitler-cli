@@ -18,10 +18,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/jroimartin/gocui"
 	"net/url"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/jroimartin/gocui"
 )
 
 var interrupt = make(chan bool, 1)

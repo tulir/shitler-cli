@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+
 	"github.com/jroimartin/gocui"
 )
 
@@ -41,8 +42,9 @@ func main() {
 		protocolWS += "s"
 	}
 
-	g = gocui.NewGui()
-	if err := g.Init(); err != nil {
+	var err error
+	g, err = gocui.NewGui(gocui.OutputNormal)
+	if err != nil {
 		panic(err)
 	}
 	defer g.Close()
@@ -52,7 +54,7 @@ func main() {
 		return gocui.ErrQuit
 	})
 
-	g.SetLayout(layout)
+	g.SetManagerFunc(layout)
 	g.SetKeybinding("input", gocui.KeyEnter, gocui.ModNone, onInput)
 
 	g.Execute(load)
