@@ -32,7 +32,7 @@ func recJoin(data map[string]interface{}) {
 	updateLobbyPlayers()
 }
 
-func recQuit(data map[string]interface{}) {
+func recPart(data map[string]interface{}) {
 	name, _ := data["name"].(string)
 	printOutput(name, "left the game.")
 	delete(lobbyPlayers, name)

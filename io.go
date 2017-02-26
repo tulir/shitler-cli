@@ -30,7 +30,7 @@ func init() {
 	recHandlers = make(map[string]func(data map[string]interface{}))
 	recHandlers["chat"] = recChat
 	recHandlers["join"] = recJoin
-	recHandlers["quit"] = recQuit
+	recHandlers["part"] = recPart
 	recHandlers["connected"] = recConnect
 	recHandlers["disconnected"] = recDisconnect
 	recHandlers["start"] = recStart
@@ -130,7 +130,7 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 		go createGame()
 		return
 	case "part":
-		msg["type"] = "quit"
+		msg["type"] = "part"
 	case "quit":
 		conn.Close()
 		g.Close()
