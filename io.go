@@ -106,7 +106,7 @@ func receive(typ string, data map[string]interface{}) {
 
 func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	nilrror = nil
-	var msg = make(map[string]string)
+	var msg = make(map[string]interface{})
 	data := strings.TrimSpace(v.Buffer())
 	v.Clear()
 	v.SetCursor(0, 0)
@@ -174,6 +174,9 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 			return
 		}
 		msg["index"] = cmdDiscard(args[0])
+		if msg["index"] == -1 {
+			return
+		}
 	case "veto":
 		if len(args) == 0 {
 			printOutputf("Usage: /%s <request/accept>", command)
@@ -228,19 +231,19 @@ func cmdVetoRequest(arg string) string {
 	}
 }
 
-func cmdDiscard(arg string) string {
+func cmdDiscard(arg string) int {
 	discard, err := strconv.Atoi(arg)
 	if err != nil {
 		for i, c := range discarding {
 			if c == strings.ToLower(arg) {
-				return strconv.Itoa(i)
+				return i
 			}
 		}
 		printOutput("There are no", arg, "cards to discard")
-		return ""
+		return -1
 	} else if discard > len(discarding) || discard <= 0 {
 		printOutput("Invalid discard index", discard)
-		return ""
+		return -1
 	}
-	return strconv.Itoa(discard - 1)
+	return discard - 1
 }

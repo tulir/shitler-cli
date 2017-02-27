@@ -78,31 +78,32 @@ func (c *connection) readLoop() {
 	for {
 		_, data, err := c.ws.ReadMessage()
 		if err != nil {
-			setStatus(status, "Disconnected: ", err)
+			setStatus("Disconnected: ", err)
 			c.readDone <- true
 			return
-		}
-		if string(data) == "connected-other" {
+		} else if string(data) == "connected-other" {
 			printOutput("Someone else connected with your name!")
 			c.joined = false
 			players.Clear()
 			table.Clear()
 			continue
 		}
+
 		var rec = make(map[string]interface{})
 		err = json.Unmarshal(data, &rec)
 		if err != nil {
 			printOutput(err)
-		}
-		if !c.joined {
+		} else if !c.joined {
 			c.joined = receivePreJoin(rec)
 			continue
 		}
+
 		typ, ok := rec["type"].(string)
 		if !ok {
 			printOutput("Invalid message from server:", rec)
+		} else {
+			receive(typ, rec)
 		}
-		receive(typ, rec)
 	}
 }
 
@@ -118,13 +119,13 @@ func (c *connection) writeLoop() {
 			}
 			err := c.writeJSON(new)
 			if err != nil {
-				setStatus("Disconnected:", err)
+				setStatus("Disconnected: ", err)
 				return
 			}
 		case <-ticker.C:
 			err := c.write(websocket.PingMessage, []byte{})
 			if err != nil {
-				setStatus("Disconnected:", err)
+				setStatus("Disconnected: ", err)
 				return
 			}
 		case <-interrupt:
