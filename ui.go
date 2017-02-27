@@ -45,6 +45,14 @@ func setStatus(msg ...interface{}) {
 	})
 }
 
+func setStatusf(str string, args ...interface{}) {
+	g.Execute(func(g *gocui.Gui) error {
+		status.Clear()
+		fmt.Fprintf(status, str, args...)
+		return nil
+	})
+}
+
 func setPlayerList(list string) {
 	g.Execute(func(g *gocui.Gui) error {
 		players.Clear()

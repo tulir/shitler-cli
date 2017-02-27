@@ -63,7 +63,7 @@ func receivePreJoin(data map[string]interface{}) bool {
 	} else if success {
 		*authtoken, _ = data["authtoken"].(string)
 		status.Clear()
-		fmt.Fprintln(status, "In game", data["game"])
+		setStatus("In game ", data["game"])
 		printOutput("Successfully joined", data["game"])
 		lobbyPlayers = make(map[string]bool)
 		for key, val := range data["players"].(map[string]interface{}) {

@@ -17,7 +17,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"time"
 
@@ -37,18 +36,19 @@ type connection struct {
 var conn *connection
 
 func connect(g *gocui.Gui) error {
-	fmt.Fprintf(status, "Connecting to %s\n", *address)
+	setStatus("Connecting to ", *address)
 
 	u := url.URL{Scheme: protocolWS, Host: *address, Path: "/socket"}
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		fmt.Fprintf(status, "Failed to connect: %v\n", err)
+		setStatus("Failed to connect: ", err)
 	}
 
 	conn = &connection{ws: c, ch: make(chan interface{}), joined: false, readDone: make(chan bool)}
 	go conn.writeLoop()
 	go conn.readLoop()
+	setStatus("Connected to %s (%s)", *address, c.RemoteAddr().String())
 	return nil
 }
 
@@ -77,7 +77,7 @@ func (c *connection) readLoop() {
 	for {
 		_, data, err := c.ws.ReadMessage()
 		if err != nil {
-			fmt.Fprintf(status, "Disconnected: %v\n", err)
+			setStatus(status, "Disconnected: ", err)
 			c.readDone <- true
 			return
 		}
