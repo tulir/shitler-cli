@@ -48,7 +48,8 @@ func connect(g *gocui.Gui) error {
 	conn = &connection{ws: c, ch: make(chan interface{}), joined: false, readDone: make(chan bool)}
 	go conn.writeLoop()
 	go conn.readLoop()
-	setStatus("Connected to %s (%s)", *address, c.RemoteAddr().String())
+	setStatus("Connected to ", *address)
+	printOutputf("Successfully connected to %s (%s)", *address, c.RemoteAddr().String())
 	return nil
 }
 

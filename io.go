@@ -126,6 +126,23 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 	msg["type"] = command
 
 	switch command {
+	case "help":
+		printOutputDirect("Pre-game actions:")
+		printOutputDirect("  /create        - Create a game")
+		printOutputDirect("  /join <gameID> - Join a certain game")
+		printOutputDirect("  /part          - Leave the game you're in")
+		printOutputDirect("  /quit          - Close shitler-cli")
+		printOutputDirect("  /start         - Try to start the current game")
+		printOutputDirect("")
+		printOutputDirect("Gameplay:")
+		printOutputDirect("  /vote <ja/nein>     - Vote for chancellor+president")
+		printOutputDirect("  /chancellor <name>  - Pick your chancellor")
+		printOutputDirect("  /discard <index>    - Discard the policy in the given index")
+		printOutputDirect("  Special actions:")
+		printOutputDirect("    /veto <ask/accept>  - Request or accept a veto")
+		printOutputDirect("    /president <name>   - Pick the next president")
+		printOutputDirect("    /investigate <name> - Investigate a player")
+		printOutputDirect("    /execute <name>     - Execute a player")
 	case "create":
 		go createGame()
 		return
@@ -137,22 +154,46 @@ func onInput(g *gocui.Gui, v *gocui.View) (nilrror error) {
 		os.Exit(0)
 		return
 	case "chancellor":
+		if len(args) == 0 {
+			printOutputf("Usage: /%s <name>", command)
+			return
+		}
 		msg["type"] = "pickchancellor"
 		msg["name"] = args[0]
 	case "vote":
+		if len(args) == 0 {
+			printOutputf("Usage: /%s <ja/nein>", command)
+			return
+		}
 		msg["vote"] = cmdVote(args[0])
 	case "start":
 		break
 	case "discard":
+		if len(args) == 0 {
+			printOutputf("Usage: /%s <index>", command)
+			return
+		}
 		msg["index"] = cmdDiscard(args[0])
 	case "veto":
+		if len(args) == 0 {
+			printOutputf("Usage: /%s <request/accept>", command)
+			return
+		}
 		msg["type"] = cmdVetoRequest(args[0])
 	case "president":
 		msg["type"] = "presidentselect"
 		fallthrough
 	case "investigate", "execute":
+		if len(args) == 0 {
+			printOutputf("Usage: /%s <name>", command)
+			return
+		}
 		msg["name"] = args[0]
 	case "join":
+		if len(args) == 0 {
+			printOutputf("Usage: /%s <gameID>", command)
+			return
+		}
 		msg["game"] = args[0]
 		msg["name"] = *name
 		msg["authtoken"] = *authtoken

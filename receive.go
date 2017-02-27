@@ -22,7 +22,7 @@ import (
 )
 
 func recChat(data map[string]interface{}) {
-	printOutputf("<%s> %s\n", data["sender"], data["message"])
+	printOutputf("<%s> %s", data["sender"], data["message"])
 }
 
 func recJoin(data map[string]interface{}) {
@@ -92,7 +92,7 @@ func recStartVote(data map[string]interface{}) {
 
 func recVote(data map[string]interface{}) {
 	vote, _ := data["vote"].(string)
-	printOutputf("You voted %s!\n", strings.Title(vote))
+	printOutputf("You voted %s!", strings.Title(vote))
 }
 
 func recCards(data map[string]interface{}) {

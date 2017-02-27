@@ -32,9 +32,17 @@ func printOutput(msg ...interface{}) {
 
 func printOutputf(msg string, args ...interface{}) {
 	g.Execute(func(g *gocui.Gui) error {
-		fmt.Fprintf(output, msg, args...)
+		fmt.Fprintf(output, msg+"\n", args...)
 		return nil
 	})
+}
+
+func printOutputDirect(msg ...interface{}) {
+	fmt.Fprintln(output, msg...)
+}
+
+func printOutputfDirect(msg string, args ...interface{}) {
+	fmt.Fprintf(output, msg+"\n", args...)
 }
 
 func setStatus(msg ...interface{}) {
